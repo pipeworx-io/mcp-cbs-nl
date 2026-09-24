@@ -1,20 +1,32 @@
 {
   "name": "@pipeworx/mcp-cbs-nl",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Statistics Netherlands (CBS / StatLine) OData MCP.",
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",
+  "bin": {
+    "mcp-cbs-nl": "bin/cli.js"
+  },
   "keywords": ["mcp", "mcp-server", "model-context-protocol", "pipeworx", "cbs-nl"],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pipeworx-io/mcp-cbs-nl"
+    "url": "git+https://github.com/pipeworx-io/mcp-cbs-nl.git"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "tsx": "^4.19.0"
+  },
   "devDependencies": {
-    "typescript": "^5.7.0"
+    "typescript": "^5.9.3",
+    "@cloudflare/workers-types": "^4.20260405.1"
+  },
+  "pipeworx": {
+    "sourceHash": "v1-46e09e644b80bcb40b905088be867d5527e237f7218a8e75295732b0128424f1",
+    "sourceCommit": "60f04b68c347e970c6be94a53439d1364061fc06"
   }
 }

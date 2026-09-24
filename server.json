@@ -3,7 +3,7 @@
   "name": "io.github.pipeworx-io/cbs-nl",
   "title": "Cbs Nl",
   "description": "Statistics Netherlands (CBS / StatLine) OData MCP.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "websiteUrl": "https://pipeworx.io/packs/cbs-nl",
   "repository": {
     "url": "https://github.com/pipeworx-io/mcp-cbs-nl",
