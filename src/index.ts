@@ -764,6 +764,32 @@ const tools: McpToolExport['tools'] = [
 ];
 
 async function callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+  try {
+    return await dispatch(name, args);
+  } catch (err) {
+    // CBS answers an unknown table id (and an unknown dimension endpoint) with
+    // a 404 ASP.NET page titled "The resource cannot be found." That threw as a
+    // bare `CBS: 404 …` and booked as a Pipeworx defect with "retry the same
+    // tool" (fleet #2496). It is the caller naming a thing CBS does not have.
+    if (err instanceof CbsHttpError && err.status === 404 && /resource cannot be found/i.test(err.body)) {
+      const table = typeof args.table === 'string' ? args.table : '';
+      const what =
+        name === 'dimension_values'
+          ? `no table "${table}" or no dimension "${String(args.dimension ?? '')}" in it`
+          : `no table "${table}"`;
+      return {
+        error: 'not_found',
+        message:
+          `CBS StatLine has ${what}. Call search_tables({keyword: "..."}) to find the table id` +
+          `${name === 'dimension_values' ? ', then table_dimensions for its dimension names' : ''}.`,
+        table,
+      };
+    }
+    throw err;
+  }
+}
+
+async function dispatch(name: string, args: Record<string, unknown>): Promise<unknown> {
   PROXY =
     typeof args._proxyUrl === 'string' && typeof args._proxyToken === 'string'
       ? { url: args._proxyUrl, token: args._proxyToken }
@@ -798,7 +824,23 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
       if (typeof args.select === 'string' && args.select.trim()) params.set('$select', args.select);
       if (typeof args.filter === 'string' && args.filter.trim()) params.set('$filter', args.filter);
       if (args.skip !== undefined) params.set('$skip', String(numArg(args.skip, 0)));
-      return cbsGet(`${TABLE}/${tableId(args)}/TypedDataSet?${params.toString()}`);
+      const out = (await cbsGet(`${TABLE}/${tableId(args)}/TypedDataSet?${params.toString()}`)) as {
+        value?: unknown[];
+      };
+      // `value: []` is an honest no-match (the filter or skip matched no rows)
+      // and used to go out as a bare empty success (fleet #2496).
+      if (Array.isArray(out?.value) && out.value.length === 0) {
+        return {
+          ...out,
+          empty_reason: 'no_match',
+          note:
+            `CBS table "${tableId(args)}" has no rows matching` +
+            `${typeof args.filter === 'string' && args.filter.trim() ? ` filter ${args.filter}` : ' this request'}` +
+            `${args.skip !== undefined ? ` at skip ${String(args.skip)}` : ''}. ` +
+            `Check the codes with dimension_values (e.g. dimension "Periods") before filtering.`,
+        };
+      }
+      return out;
     }
     default:
       throw new Error(`Unknown tool: ${name}`);
@@ -821,7 +863,9 @@ async function cbsGet(url: string): Promise<unknown> {
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     const title = body.match(/<title>([\s\S]*?)<\/title>/i)?.[1]?.trim();
-    throw new Error(
+    throw new CbsHttpError(
+      res.status,
+      body,
       `CBS: ${res.status}${title ? ` ${title}` : ''} — ${url} — ${body.replace(/\s+/g, ' ').slice(0, 300)}`,
     );
   }
@@ -831,6 +875,16 @@ async function cbsGet(url: string): Promise<unknown> {
     return JSON.parse(text);
   } catch {
     throw new Error(`CBS returned a non-JSON body for ${url}: ${text.replace(/\s+/g, ' ').slice(0, 200)}`);
+  }
+}
+
+class CbsHttpError extends Error {
+  readonly status: number;
+  readonly body: string;
+  constructor(status: number, body: string, message: string) {
+    super(message);
+    this.status = status;
+    this.body = body;
   }
 }
 
