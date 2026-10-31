@@ -1,6 +1,6 @@
 {
   "name": "@pipeworx/mcp-cbs-nl",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Statistics Netherlands (CBS / StatLine) OData MCP.",
   "type": "module",
   "main": "lib/index.js",
@@ -27,7 +27,7 @@
     "mode": "gateway",
     "slug": "cbs-nl",
     "gatewaySlug": "cbs-nl",
-    "sourceHash": "v1-f34dc648b1b29df56ed871b8eee2428205a2a5bfaa8cf5a453cddedf741de146",
-    "sourceCommit": "4277282d72f9bf55e548b3799aaf737baf22152f"
+    "sourceHash": "v1-a82b46be54fbb74877187355ff17870a684ad57c27b06057830253fb0dcbc998",
+    "sourceCommit": "547a3983b42dacf4389ca474860b0a1dee8e6053"
   }
 }
